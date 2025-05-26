@@ -1,8 +1,7 @@
 import re
 import math
-import os
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import List
 from collections import Counter
 
 from .scanner import BaseScanner, ScanResult, Finding, Severity
@@ -10,19 +9,6 @@ from .scanner import BaseScanner, ScanResult, Finding, Severity
 
 class SecretsScanner(BaseScanner):
     """Scanner for detecting secrets and credentials in code"""
-    
-    # Common file extensions to scan
-    SCANNABLE_EXTENSIONS = {
-        '.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.go', '.rb', '.php',
-        '.yml', '.yaml', '.json', '.xml', '.env', '.cfg', '.conf', '.ini',
-        '.sh', '.bash', '.zsh', '.ps1', '.sql', '.md', '.txt'
-    }
-    
-    # Files and directories to skip
-    SKIP_PATTERNS = {
-        '.git', '.svn', '.hg', 'node_modules', '__pycache__', '.pytest_cache',
-        'venv', 'env', '.env', 'dist', 'build', '.next', '.nuxt'
-    }
     
     # Regex patterns for common secrets
     SECRET_PATTERNS = {
@@ -55,30 +41,6 @@ class SecretsScanner(BaseScanner):
                 entropy -= probability * math.log2(probability)
         
         return entropy
-    
-    def _truncate_code_snippet(self, code: str, max_length: int = 100) -> str:
-        """Intelligently truncate code snippets for display"""
-        if not code:
-            return ""
-        
-        # If it's short enough, return as-is
-        if len(code) <= max_length:
-            return code
-        
-        # For very long lines (likely minified), show context around secrets
-        # Try to find where the actual secret might be
-        truncated = code[:max_length]
-        
-        # If we're in the middle of a word/token, try to end at a reasonable boundary
-        if max_length < len(code):
-            # Look for natural break points near the end
-            for boundary in [' ', '"', "'", '=', ':', ';', ',', ')', '}', ']']:
-                last_boundary = truncated.rfind(boundary)
-                if last_boundary > max_length - 20:  # Within 20 chars of the end
-                    truncated = code[:last_boundary + 1]
-                    break
-        
-        return truncated + "..." if len(code) > len(truncated) else truncated
     
     def is_high_entropy_string(self, text: str, min_length: int = 20, min_entropy: float = 4.5) -> bool:
         """Check if a string has high entropy (potentially a secret)"""
@@ -155,26 +117,6 @@ class SecretsScanner(BaseScanner):
                 ))
         
         return findings
-    
-    def should_scan_file(self, file_path: Path) -> bool:
-        """Determine if a file should be scanned"""
-        # Check file extension
-        if file_path.suffix.lower() not in self.SCANNABLE_EXTENSIONS:
-            return False
-        
-        # Check if any parent directory should be skipped
-        for part in file_path.parts:
-            if part in self.SKIP_PATTERNS:
-                return False
-        
-        # Check file size (skip very large files)
-        try:
-            if file_path.stat().st_size > 10 * 1024 * 1024:  # 10MB
-                return False
-        except OSError:
-            return False
-        
-        return True
     
     def scan(self, target_path: str) -> ScanResult:
         """Scan target path for secrets"""
