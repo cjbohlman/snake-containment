@@ -1,0 +1,18 @@
+[project]
+name = "snake-containment"
+version = "0.1.0"
+description = "Security analysis tool for CI/CD pipelines"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "click",           # CLI interface
+    "pydantic",        # Config and data validation
+    "requests",        # API calls
+    "pyyaml",          # Config files
+    "gitpython",       # Git operations
+    "semgrep",         # Static analysis (optional)
+    "bandit",          # Python security linting
+]
+
+[project.scripts]
+snake-containment = "snake_containment.cli:main"
