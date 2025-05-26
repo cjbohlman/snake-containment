@@ -56,6 +56,30 @@ class SecretsScanner(BaseScanner):
         
         return entropy
     
+    def _truncate_code_snippet(self, code: str, max_length: int = 100) -> str:
+        """Intelligently truncate code snippets for display"""
+        if not code:
+            return ""
+        
+        # If it's short enough, return as-is
+        if len(code) <= max_length:
+            return code
+        
+        # For very long lines (likely minified), show context around secrets
+        # Try to find where the actual secret might be
+        truncated = code[:max_length]
+        
+        # If we're in the middle of a word/token, try to end at a reasonable boundary
+        if max_length < len(code):
+            # Look for natural break points near the end
+            for boundary in [' ', '"', "'", '=', ':', ';', ',', ')', '}', ']']:
+                last_boundary = truncated.rfind(boundary)
+                if last_boundary > max_length - 20:  # Within 20 chars of the end
+                    truncated = code[:last_boundary + 1]
+                    break
+        
+        return truncated + "..." if len(code) > len(truncated) else truncated
+    
     def is_high_entropy_string(self, text: str, min_length: int = 20, min_entropy: float = 4.5) -> bool:
         """Check if a string has high entropy (potentially a secret)"""
         if len(text) < min_length:
@@ -109,7 +133,7 @@ class SecretsScanner(BaseScanner):
                     description=f"Detected pattern matching {secret_type}",
                     file_path=str(file_path),
                     line_number=line_num,
-                    code_snippet=line_content.strip(),
+                    code_snippet=self._truncate_code_snippet(line_content.strip()),
                     recommendation=f"Remove the {secret_type} from source code and use environment variables or secure secret management",
                     metadata={"pattern": secret_type, "match": match.group()}
                 ))
@@ -125,7 +149,7 @@ class SecretsScanner(BaseScanner):
                     description=f"Found string with high entropy (possibly a secret): {secret[:20]}...",
                     file_path=str(file_path),
                     line_number=i,
-                    code_snippet=line.strip(),
+                    code_snippet=self._truncate_code_snippet(line.strip()),
                     recommendation="Review this string - if it's a secret, move it to environment variables",
                     metadata={"entropy": self.calculate_entropy(secret), "string_length": len(secret)}
                 ))
