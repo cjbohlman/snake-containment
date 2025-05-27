@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 
 from .core.secrets import SecretsScanner
+from .core.ip_address import IpAddressScanner
 from .core.scanner import ScanResult
 
 
@@ -25,8 +26,8 @@ def cli():
               help='Output file (default: stdout)')
 @click.option('--scanner', '-s',
               multiple=True,
-              type=click.Choice(['secrets']),
-              default=['secrets'],
+              type=click.Choice(['secrets', 'ip_address']),
+              default=['secrets', 'ip_address'],
               help='Scanners to run')
 def scan(target_path: str, format: str, output: str, scanner: List[str]):
     """Scan target path for security issues"""
@@ -38,6 +39,12 @@ def scan(target_path: str, format: str, output: str, scanner: List[str]):
         click.echo("Running secrets scanner...")
         secrets_scanner = SecretsScanner()
         result = secrets_scanner.scan(target_path)
+        results.append(result)
+
+    if 'ip_address' in scanner:
+        click.echo('Running IP address scanner...')
+        ip_scanner = IpAddressScanner()
+        result = ip_scanner.scan(target_path)
         results.append(result)
     
     # Format and output results

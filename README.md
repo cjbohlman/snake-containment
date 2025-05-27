@@ -4,12 +4,6 @@
 - [ ] Handle errors consistently across all files
 - [ ] Write unit tests
 
-Hardcoded IP Scanner - Look for private IP addresses, localhost references, or hardcoded production IPs
-
-Patterns: 192.168.x.x, 10.x.x.x, 127.0.0.1, etc.
-Useful for finding dev/test configs left in code
-
-
 TODO/FIXME Scanner - Find security-related TODOs
 
 Look for comments like # TODO: add authentication, # FIXME: remove this hack

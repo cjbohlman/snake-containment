@@ -87,7 +87,7 @@ class BaseScanner(ABC):
     # Files and directories to skip
     SKIP_PATTERNS = {
         '.git', '.svn', '.hg', 'node_modules', '__pycache__', '.pytest_cache',
-        'venv', 'env', '.env', 'dist', 'build', '.next', '.nuxt'
+        'venv', '.venv', 'env', '.env', 'dist', 'build', '.next', '.nuxt'
     }
 
     def should_scan_file(self, file_path: Path) -> bool:

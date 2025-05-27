@@ -4,6 +4,7 @@ Core scanning functionality
 
 from .scanner import BaseScanner, ScanResult, Finding, Severity
 from .secrets import SecretsScanner
+from .ip_address import IpAddressScanner
 
 __all__ = [
     "BaseScanner",
@@ -11,4 +12,5 @@ __all__ = [
     "Finding", 
     "Severity",
     "SecretsScanner",
+    "IpAddressScanner"
 ]
