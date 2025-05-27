@@ -1,0 +1,45 @@
+name: 'Snake Containment Security Scanner'
+description: 'Scan your repository for secrets, IP addresses, and other security issues'
+author: 'Your Name'
+
+inputs:
+  path:
+    description: 'Path to scan (default: current directory)'
+    required: false
+    default: '.'
+  scanners:
+    description: 'Comma-separated list of scanners to run (secrets,ip_address)'
+    required: false
+    default: 'secrets,ip_address'
+  format:
+    description: 'Output format (text, json, sarif)'
+    required: false
+    default: 'sarif'
+  fail-on-findings:
+    description: 'Fail the action if findings are discovered'
+    required: false
+    default: 'true'
+  severity-threshold:
+    description: 'Minimum severity to report (low, medium, high, critical)'
+    required: false
+    default: 'medium'
+
+outputs:
+  findings-count:
+    description: 'Number of findings discovered'
+  sarif-file:
+    description: 'Path to SARIF results file'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.path }}
+    - ${{ inputs.scanners }}
+    - ${{ inputs.format }}
+    - ${{ inputs.fail-on-findings }}
+    - ${{ inputs.severity-threshold }}
+
+branding:
+  icon: 'shield'
+  color: 'red'

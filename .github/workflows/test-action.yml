@@ -1,0 +1,32 @@
+name: Test Snake Containment Action
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Snake Containment Scanner
+      id: scan
+      uses: ./  # Use the local action
+      with:
+        path: '.'
+        scanners: 'secrets,ip_address'
+        format: 'sarif'
+        fail-on-findings: 'false'  # Don't fail during testing
+    
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: /tmp/snake-containment.sarif
+    
+    - name: Show results
+      run: |
+        echo "Findings count: ${{ steps.scan.outputs.findings-count }}"
