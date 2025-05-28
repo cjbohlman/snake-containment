@@ -16,7 +16,6 @@ MD5, SHA1 usage, hardcoded salts, weak key sizes
 Look for hashlib.md5(), DES, small RSA keys
 
 
-
 Medium Complexity:
 
 Environment Variable Scanner - Find missing .env patterns

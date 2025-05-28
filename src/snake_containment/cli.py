@@ -5,6 +5,7 @@ from typing import List
 
 from .core.secrets import SecretsScanner
 from .core.ip_address import IpAddressScanner
+from .core.comment import CommentScanner
 from .core.scanner import ScanResult
 
 
@@ -26,8 +27,8 @@ def cli():
               help='Output file (default: stdout)')
 @click.option('--scanner', '-s',
               multiple=True,
-              type=click.Choice(['secrets', 'ip_address']),
-              default=['secrets', 'ip_address'],
+              type=click.Choice(['secrets', 'ip_address', 'comment']),
+              default=['secrets', 'ip_address', 'comment'],
               help='Scanners to run')
 def scan(target_path: str, format: str, output: str, scanner: List[str]):
     """Scan target path for security issues"""
@@ -45,6 +46,12 @@ def scan(target_path: str, format: str, output: str, scanner: List[str]):
         click.echo('Running IP address scanner...')
         ip_scanner = IpAddressScanner()
         result = ip_scanner.scan(target_path)
+        results.append(result)
+
+    if 'comment' in scanner:
+        click.echo('Running Comment scanner...')
+        comment_scanner = CommentScanner()
+        result = comment_scanner.scan(target_path)
         results.append(result)
     
     # Format and output results
