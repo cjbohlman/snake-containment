@@ -25,7 +25,7 @@ jobs:
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
-        sarif_file: /tmp/snake-containment.sarif
+        sarif_file: snake-containment.sarif
       continue-on-error: true
     
     - name: Show results

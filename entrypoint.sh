@@ -116,14 +116,15 @@ echo "OUTPUT_FILE: '$OUTPUT_FILE'"
 # Copy SARIF file to expected location for GitHub upload
 if [[ "$FORMAT" == "sarif" && -f "$OUTPUT_FILE" ]]; then
     echo "📊 SARIF results available for GitHub Security tab"
-    # Copy to a standard location that GitHub can access
-    if cp "$OUTPUT_FILE" "/tmp/snake-containment.sarif" 2>/dev/null; then
-        echo "✅ SARIF file copied to /tmp/snake-containment.sarif"
-        if [[ -n "$GITHUB_OUTPUT" && -w "$GITHUB_OUTPUT" ]]; then
-            echo "sarif-file=/tmp/snake-containment.sarif" >> "$GITHUB_OUTPUT"
+    # Copy to the workspace directory which is shared between container and host
+    WORKSPACE_SARIF="/github/workspace/snake-containment.sarif"
+    if cp "$OUTPUT_FILE" "$WORKSPACE_SARIF" 2>/dev/null; then
+        echo "✅ SARIF file copied to $WORKSPACE_SARIF"
+        if [[ -n "$GITHUB_OUTPUT" ]]; then
+            echo "sarif-file=$WORKSPACE_SARIF" >> "$GITHUB_OUTPUT" 2>&1 || true
         fi
     else
-        echo "❌ Failed to copy SARIF file"
+        echo "❌ Failed to copy SARIF file to workspace"
     fi
 fi
 
