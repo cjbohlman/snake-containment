@@ -37,7 +37,7 @@ else
 fi
 
 # Count findings from the output
-if [[ "$FORMAT" == "json" ]]; then
+if [[ "$FORMAT" == "json" && -f "$OUTPUT_FILE" ]]; then
     FINDINGS_COUNT=$(python3 -c "
 import json
 try:
@@ -46,23 +46,32 @@ try:
     print(data.get('summary', {}).get('total_findings', 0))
 except:
     print(0)
-")
+" 2>/dev/null || echo "0")
 else
     # For text/sarif, count lines or use basic parsing
-    FINDINGS_COUNT=$(grep -c "Found\|Detected" "$OUTPUT_FILE" 2>/dev/null || echo "0")
+    if [[ -f "$OUTPUT_FILE" ]]; then
+        FINDINGS_COUNT=$(grep -c "Found\|Detected" "$OUTPUT_FILE" 2>/dev/null || echo "0")
+    else
+        FINDINGS_COUNT="0"
+    fi
 fi
 
 echo "Found $FINDINGS_COUNT findings"
 
-# Set GitHub Action outputs
-echo "findings-count=$FINDINGS_COUNT" >> $GITHUB_OUTPUT
-echo "sarif-file=$OUTPUT_FILE" >> $GITHUB_OUTPUT
+# Set GitHub Action outputs (only if GITHUB_OUTPUT exists)
+if [[ -n "$GITHUB_OUTPUT" ]]; then
+    echo "findings-count=$FINDINGS_COUNT" >> "$GITHUB_OUTPUT"
+    echo "sarif-file=$OUTPUT_FILE" >> "$GITHUB_OUTPUT"
+fi
 
-# Upload SARIF file for GitHub Security tab integration
+# Copy SARIF file to expected location for GitHub upload
 if [[ "$FORMAT" == "sarif" && -f "$OUTPUT_FILE" ]]; then
     echo "📊 SARIF results available for GitHub Security tab"
-    # Copy to expected location for upload
-    cp "$OUTPUT_FILE" "/tmp/snake-containment.sarif"
+    # Copy to a standard location that GitHub can access
+    cp "$OUTPUT_FILE" "/tmp/snake-containment.sarif" 2>/dev/null || true
+    if [[ -n "$GITHUB_OUTPUT" ]]; then
+        echo "sarif-file=/tmp/snake-containment.sarif" >> "$GITHUB_OUTPUT"
+    fi
 fi
 
 # Display results
