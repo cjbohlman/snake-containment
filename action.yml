@@ -10,7 +10,7 @@ inputs:
   scanners:
     description: 'Comma-separated list of scanners to run (secrets,ip_address)'
     required: false
-    default: 'secrets,ip_address'
+    default: 'secrets,ip_address,comment'
   format:
     description: 'Output format (text, json, sarif)'
     required: false

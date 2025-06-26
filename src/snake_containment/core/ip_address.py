@@ -25,7 +25,16 @@ class IpAddressScanner(BaseScanner):
         self.private_ip_pattern = re.compile('|'.join(f'({pattern})' for pattern in private_ip_patterns))
         
         # More precise localhost pattern (word boundaries)
-        self.localhost_pattern = re.compile(r'\blocalhost\b', re.IGNORECASE)
+        self.localhost_patterns = [
+            re.compile(r'"[^"]*localhost[^"]*"', re.IGNORECASE),
+            re.compile(r"'[^']*localhost[^']*'", re.IGNORECASE),
+            re.compile(r'host\s*[=:]\s*"[^"]*localhost[^"]*"', re.IGNORECASE),
+            re.compile(r"host\s*[=:]\s*'[^']*localhost[^']*'", re.IGNORECASE),
+            re.compile(r'server\s*[=:]\s*"[^"]*localhost[^"]*"', re.IGNORECASE),
+            re.compile(r"server\s*[=:]\s*'[^']*localhost[^']*'", re.IGNORECASE),
+            re.compile(r'host\s*[=:]\s*localhost\b', re.IGNORECASE),
+            re.compile(r'server\s*[=:]\s*localhost\b', re.IGNORECASE),
+        ]
 
     @property
     def name(self) -> str:
@@ -62,17 +71,18 @@ class IpAddressScanner(BaseScanner):
                 ))
             
             # Localhost references
-            for match in self.localhost_pattern.finditer(line):
-                findings.append(Finding(
-                    scanner=self.name,
-                    severity=Severity.LOW,
-                    title="Localhost Reference Found",
-                    description="Reference to localhost detected",
-                    file_path=str(file_path),
-                    line_number=line_num,
-                    code_snippet=self._truncate_code_snippet(line.strip()),
-                    recommendation="Ensure localhost references are intentional and not hardcoded for production",
-                    metadata={"reference": "localhost"}
+            for pattern in self.localhost_patterns:
+                for match in pattern.finditer(line):
+                    findings.append(Finding(
+                        scanner=self.name,
+                        severity=Severity.LOW,
+                        title="Localhost Reference Found",
+                        description="Reference to localhost detected",
+                        file_path=str(file_path),
+                        line_number=line_num,
+                        code_snippet=self._truncate_code_snippet(line.strip()),
+                        recommendation="Ensure localhost references are intentional and not hardcoded for production",
+                        metadata={"reference": "localhost"}
                 ))
         
         return findings

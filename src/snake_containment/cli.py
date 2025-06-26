@@ -27,8 +27,8 @@ def cli():
               help='Output file (default: stdout)')
 @click.option('--scanner', '-s',
               multiple=True,
-              type=click.Choice(['secrets', 'ip_address']),
-              default=['secrets'],
+              type=click.Choice(['secrets', 'ip_address', 'comment']),
+              default=['secrets', 'ip_address', 'comment'],
               help='Scanners to run')
 def scan(target_path: str, format: str, output: str, scanner: List[str]):
     """Scan target path for security issues"""
