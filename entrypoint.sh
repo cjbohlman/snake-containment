@@ -46,9 +46,10 @@ fi
 echo "Checking output file: $OUTPUT_FILE"
 if [[ -f "$OUTPUT_FILE" ]]; then
     echo "✅ Output file exists, size: $(wc -c < "$OUTPUT_FILE") bytes"
-    echo "First 200 characters of output:"
-    head -c 200 "$OUTPUT_FILE"
-    echo ""
+    echo "Content of output file:"
+    echo "===================="
+    cat "$OUTPUT_FILE"
+    echo "===================="
 else
     echo "❌ Output file does not exist"
     echo "Files in /tmp/results/:"
@@ -84,15 +85,19 @@ if ! [[ "$FINDINGS_COUNT" =~ ^[0-9]+$ ]]; then
     FINDINGS_COUNT="0"
 fi
 
-# Set GitHub Action outputs (only if GITHUB_OUTPUT exists)
-if [[ -n "$GITHUB_OUTPUT" && -w "$GITHUB_OUTPUT" ]]; then
-    echo "findings-count=$FINDINGS_COUNT" >> "$GITHUB_OUTPUT"
-    echo "sarif-file=$OUTPUT_FILE" >> "$GITHUB_OUTPUT"
-    echo "✅ GitHub outputs set successfully"
+# Set GitHub Action outputs (with better error handling)
+if [[ -n "$GITHUB_OUTPUT" ]]; then
+    {
+        echo "findings-count=$FINDINGS_COUNT"
+        echo "sarif-file=$OUTPUT_FILE"
+    } >> "$GITHUB_OUTPUT" 2>&1 && echo "✅ GitHub outputs set successfully" || echo "❌ Failed to set GitHub outputs"
 else
-    echo "⚠️  GITHUB_OUTPUT not available or not writable"
-    echo "GITHUB_OUTPUT value: '$GITHUB_OUTPUT'"
+    echo "⚠️  GITHUB_OUTPUT not available"
 fi
+
+echo "Debug info:"
+echo "FINDINGS_COUNT: '$FINDINGS_COUNT'"
+echo "OUTPUT_FILE: '$OUTPUT_FILE'"
 
 # Copy SARIF file to expected location for GitHub upload
 if [[ "$FORMAT" == "sarif" && -f "$OUTPUT_FILE" ]]; then
