@@ -27,8 +27,8 @@ def cli():
               help='Output file (default: stdout)')
 @click.option('--scanner', '-s',
               multiple=True,
-              type=click.Choice(['secrets', 'ip_address', 'comment']),
-              default=['secrets', 'ip_address', 'comment'],
+              type=click.Choice(['secrets', 'ip_address']),
+              default=['secrets'],
               help='Scanners to run')
 def scan(target_path: str, format: str, output: str, scanner: List[str]):
     """Scan target path for security issues"""
@@ -41,9 +41,9 @@ def scan(target_path: str, format: str, output: str, scanner: List[str]):
         secrets_scanner = SecretsScanner()
         result = secrets_scanner.scan(target_path)
         results.append(result)
-
+    
     if 'ip_address' in scanner:
-        click.echo('Running IP address scanner...')
+        click.echo("Running IP address scanner...")
         ip_scanner = IpAddressScanner()
         result = ip_scanner.scan(target_path)
         results.append(result)
@@ -63,7 +63,7 @@ def scan(target_path: str, format: str, output: str, scanner: List[str]):
         output_text(results, output)
 
 
-def output_text(results: List[ScanResult], output_file: str = None):
+def output_text(results: List[ScanResult], output_file: str = ''):
     """Output results in human-readable text format"""
     output_lines = []
     
@@ -143,7 +143,7 @@ def output_text(results: List[ScanResult], output_file: str = None):
         click.echo(content)
 
 
-def output_json(results: List[ScanResult], output_file: str = None):
+def output_json(results: List[ScanResult], output_file: str = ''):
     """Output results in JSON format"""
     data = {
         "scan_results": [result.dict() for result in results],
@@ -166,13 +166,21 @@ def output_json(results: List[ScanResult], output_file: str = None):
         click.echo(content)
 
 
-def output_sarif(results: List[ScanResult], output_file: str = None):
+def output_sarif(results: List[ScanResult], output_file: str = ''):
     """Output results in SARIF format for GitHub integration"""
     # Basic SARIF structure - this could be expanded
     sarif_data = {
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
         "version": "2.1.0",
         "runs": []
+    }
+    
+    # Map our severity levels to SARIF levels
+    severity_to_sarif_level = {
+        "critical": "error",
+        "high": "error", 
+        "medium": "warning",
+        "low": "note"
     }
     
     for result in results:
@@ -187,10 +195,12 @@ def output_sarif(results: List[ScanResult], output_file: str = None):
         }
         
         for finding in result.findings:
+            sarif_level = severity_to_sarif_level.get(finding.severity.value, "warning")
+            
             sarif_result = {
                 "ruleId": f"{result.scanner}-{finding.title.lower().replace(' ', '-')}",
                 "message": {"text": finding.description},
-                "level": finding.severity.value,
+                "level": sarif_level,
                 "locations": [{
                     "physicalLocation": {
                         "artifactLocation": {"uri": finding.file_path},
