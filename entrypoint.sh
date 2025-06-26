@@ -67,8 +67,22 @@ try:
 except:
     print(0)
 " 2>/dev/null || echo "0")
+elif [[ "$FORMAT" == "sarif" && -f "$OUTPUT_FILE" ]]; then
+    # Count SARIF results properly
+    FINDINGS_COUNT=$(python3 -c "
+import json
+try:
+    with open('$OUTPUT_FILE', 'r') as f:
+        data = json.load(f)
+    total = 0
+    for run in data.get('runs', []):
+        total += len(run.get('results', []))
+    print(total)
+except:
+    print(0)
+" 2>/dev/null || echo "0")
 else
-    # For text/sarif, count lines or use basic parsing
+    # For text format, count lines or use basic parsing
     if [[ -f "$OUTPUT_FILE" ]]; then
         FINDINGS_COUNT=$(grep -c "Found\|Detected" "$OUTPUT_FILE" 2>/dev/null || echo "0")
     else

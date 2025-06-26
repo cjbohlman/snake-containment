@@ -23,9 +23,10 @@ jobs:
     
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v3
-      if: always() && steps.scan.outputs.sarif-file && hashFiles(steps.scan.outputs.sarif-file)
+      if: always()
       with:
-        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        sarif_file: /tmp/snake-containment.sarif
+      continue-on-error: true
     
     - name: Show results
       run: |
