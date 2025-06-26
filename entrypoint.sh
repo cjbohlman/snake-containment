@@ -30,10 +30,29 @@ OUTPUT_FILE="/tmp/results/snake-containment-results.$FORMAT"
 
 echo "Running: snake-containment scan $SCAN_PATH $SCANNER_ARGS --format $FORMAT --output $OUTPUT_FILE"
 
+# Add debugging
+echo "Current directory: $(pwd)"
+echo "Files in current directory: $(ls -la)"
+
 if snake-containment scan "$SCAN_PATH" $SCANNER_ARGS --format "$FORMAT" --output "$OUTPUT_FILE"; then
     SCAN_SUCCESS=true
+    echo "✅ Scan completed successfully"
 else
     SCAN_SUCCESS=false
+    echo "❌ Scan failed with exit code $?"
+fi
+
+# Debug output file
+echo "Checking output file: $OUTPUT_FILE"
+if [[ -f "$OUTPUT_FILE" ]]; then
+    echo "✅ Output file exists, size: $(wc -c < "$OUTPUT_FILE") bytes"
+    echo "First 200 characters of output:"
+    head -c 200 "$OUTPUT_FILE"
+    echo ""
+else
+    echo "❌ Output file does not exist"
+    echo "Files in /tmp/results/:"
+    ls -la /tmp/results/ || echo "Directory doesn't exist"
 fi
 
 # Count findings from the output
@@ -57,20 +76,35 @@ else
 fi
 
 echo "Found $FINDINGS_COUNT findings"
+echo "Debug: FINDINGS_COUNT='$FINDINGS_COUNT' (length: ${#FINDINGS_COUNT})"
+
+# Validate findings count is a number
+if ! [[ "$FINDINGS_COUNT" =~ ^[0-9]+$ ]]; then
+    echo "⚠️  Invalid findings count, defaulting to 0"
+    FINDINGS_COUNT="0"
+fi
 
 # Set GitHub Action outputs (only if GITHUB_OUTPUT exists)
-if [[ -n "$GITHUB_OUTPUT" ]]; then
+if [[ -n "$GITHUB_OUTPUT" && -w "$GITHUB_OUTPUT" ]]; then
     echo "findings-count=$FINDINGS_COUNT" >> "$GITHUB_OUTPUT"
     echo "sarif-file=$OUTPUT_FILE" >> "$GITHUB_OUTPUT"
+    echo "✅ GitHub outputs set successfully"
+else
+    echo "⚠️  GITHUB_OUTPUT not available or not writable"
+    echo "GITHUB_OUTPUT value: '$GITHUB_OUTPUT'"
 fi
 
 # Copy SARIF file to expected location for GitHub upload
 if [[ "$FORMAT" == "sarif" && -f "$OUTPUT_FILE" ]]; then
     echo "📊 SARIF results available for GitHub Security tab"
     # Copy to a standard location that GitHub can access
-    cp "$OUTPUT_FILE" "/tmp/snake-containment.sarif" 2>/dev/null || true
-    if [[ -n "$GITHUB_OUTPUT" ]]; then
-        echo "sarif-file=/tmp/snake-containment.sarif" >> "$GITHUB_OUTPUT"
+    if cp "$OUTPUT_FILE" "/tmp/snake-containment.sarif" 2>/dev/null; then
+        echo "✅ SARIF file copied to /tmp/snake-containment.sarif"
+        if [[ -n "$GITHUB_OUTPUT" && -w "$GITHUB_OUTPUT" ]]; then
+            echo "sarif-file=/tmp/snake-containment.sarif" >> "$GITHUB_OUTPUT"
+        fi
+    else
+        echo "❌ Failed to copy SARIF file"
     fi
 fi
 
